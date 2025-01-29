@@ -6,13 +6,6 @@ This is a simple Telegram bot that allows users to get a unique GP link after jo
 
 ---
 
-
-# Telegram Bot with GP Link and Channel Verification
-
-This is a simple Telegram bot that allows users to get a unique GP link after joining a specific Telegram channel. The bot provides the GP link via an inline button, and the link expires after 2 minutes. Admins can update the GP link anytime, and users can request their link by interacting with the bot.
-
----
-
 ## Features
 
 - **Channel Verification**: The bot verifies whether the user has joined a specific channel before giving access to the GP link.
@@ -36,8 +29,8 @@ This is a simple Telegram bot that allows users to get a unique GP link after jo
 
 1. **Clone the repository**:
     ```bash
-    git clone https://github.com/your-username/telegram-bot-gplink.git
-    cd telegram-bot-gplink
+    git clone https://github.com/Kinggolo/Telegram-Channel-Force-Bot.git
+    cd Telegram-Channel-Force-Bot
     ```
 
 2. **Install the required dependencies**:
@@ -50,6 +43,7 @@ This is a simple Telegram bot that allows users to get a unique GP link after jo
     ```
     TELEGRAM_BOT_TOKEN=your_telegram_bot_token
     ADMIN_ID=your_telegram_admin_user_id
+    CHANNEL_USERNAME=your_channel_id
     ```
 
 4. **Run the bot**:
