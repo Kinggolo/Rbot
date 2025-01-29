@@ -1,42 +1,44 @@
+import os
 import telebot
 import threading
 import time
 import uuid
-import os
+from flask import Flask
+from threading import Thread
 
-# Use environment variables for security
-TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")  # Store the bot token in environment variables
-CHANNEL_USERNAME = "@speedy_current_affairs_2026"  # Your channel's username
-ADMIN_ID = int(os.getenv("ADMIN_ID"))  # Store your admin ID in environment variables
+# Environment variables
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CHANNEL_USERNAME = "@speedy_current_affairs_2026"
+ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
 bot = telebot.TeleBot(TOKEN)
-gplink_url = None  # GPLink URL that the admin will update
-user_links = {}  # Dictionary to store user-specific links
+gplink_url = None
+user_links = {}
+
+# Flask app for health check
+app = Flask(__name__)
+
+@app.route("/health", methods=["GET"])
+def health_check():
+    return "OK", 200
 
 def is_user_in_channel(user_id):
-    """Check if the user is a member of the specified channel"""
+    """Check if user is in the channel"""
     try:
         chat_member = bot.get_chat_member(CHANNEL_USERNAME, user_id)
         return chat_member.status in ["member", "administrator", "creator"]
-    except Exception as e:
-        print(f"Error checking membership: {e}")
+    except Exception:
         return False
-
-def send_user_message(user_id, message):
-    """Send a message to the user"""
-    bot.send_message(user_id, message)
 
 def delete_expired_links():
     """Periodically check and delete expired links"""
     while True:
         current_time = time.time()
         expired_users = [user_id for user_id, (link, timestamp) in user_links.items() if current_time - timestamp > 120]
-        
         for user_id in expired_users:
             del user_links[user_id]
-            send_user_message(user_id, "⏳ Your link has expired! Request again later.")
-        
-        time.sleep(60)  # Check every 60 seconds
+            bot.send_message(user_id, "⏳ Your link has expired! Request again later.")
+        time.sleep(60)
 
 # Start the expiration checker in a separate thread
 threading.Thread(target=delete_expired_links, daemon=True).start()
@@ -46,20 +48,20 @@ def start(message):
     user_id = message.chat.id
 
     if not is_user_in_channel(user_id):
-        send_user_message(user_id, f"🚀 Please join our channel first: {CHANNEL_USERNAME}\nThen press /start again.")
+        bot.send_message(user_id, f"🚀 Please join our channel first: {CHANNEL_USERNAME}\nThen press /start again.")
         return
 
     # Check if the user already got a link
     if user_id in user_links:
-        send_user_message(user_id, "❌ You have already used your link. Wait for the next update.")
+        bot.send_message(user_id, "❌ You have already used your link. Wait for the next update.")
         return
 
     if gplink_url:
         unique_link = f"{gplink_url}?token={uuid.uuid4()}"
         user_links[user_id] = (unique_link, time.time())  # Store the link and its creation time
-        send_user_message(user_id, f"🎉 Here is your unique link:\n{unique_link}\n\n⏳ This link will expire in 2 minutes.")
+        bot.send_message(user_id, f"🎉 Here is your unique link:\n{unique_link}\n\n⏳ This link will expire in 2 minutes.")
     else:
-        send_user_message(user_id, "❌ No link is available right now. Please wait for the admin to update.")
+        bot.send_message(user_id, "❌ No link is available right now. Please wait for the admin to update.")
 
 @bot.message_handler(commands=['setlink'])
 def set_link(message):
@@ -68,10 +70,20 @@ def set_link(message):
         new_link = message.text.split(" ", 1)[1] if len(message.text.split()) > 1 else None
         if new_link:
             gplink_url = new_link
-            send_user_message(ADMIN_ID, f"✅ GPLink updated to: {gplink_url}")
+            bot.send_message(ADMIN_ID, f"✅ GPLink updated to: {gplink_url}")
         else:
-            send_user_message(ADMIN_ID, "❌ Please provide a valid link. Example:\n/setlink https://newgplink.com")
+            bot.send_message(ADMIN_ID, "❌ Please provide a valid link. Example:\n/setlink https://newgplink.com")
     else:
-        send_user_message(message.chat.id, "❌ You are not authorized to use this command.")
+        bot.send_message(message.chat.id, "❌ You are not authorized to use this command.")
 
-bot.polling()
+# Function to run bot polling and Flask app together
+def run_bot():
+    bot.polling()
+
+def run_flask():
+    app.run(host="0.0.0.0", port=5000)
+
+# Run both the bot and Flask app in separate threads
+if __name__ == "__main__":
+    threading.Thread(target=run_bot).start()
+    run_flask()
