@@ -1,17 +1,17 @@
-# Use a Python 3.9 slim image as the base
+# Use a slim Python 3.9 base image
 FROM python:3.9-slim
 
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy all files from the local directory to the container
-COPY . /app
+# Copy the application files to the container
+COPY . .
 
-# Install the dependencies listed in requirements.txt
+# Install the dependencies from requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose port 5000 for the Flask app
+# Expose the port the app will run on
 EXPOSE 5000
 
-# Set the command to run your bot with Flask app
-CMD ["python3", "bot.py"]
+# Command to run the application
+CMD ["python", "bot.py"]
