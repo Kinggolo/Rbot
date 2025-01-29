@@ -44,34 +44,32 @@ def delete_expired_links():
 # Start the expiration checker in a separate thread
 threading.Thread(target=delete_expired_links, daemon=True).start()
 
+def send_welcome_message(user_id):
+    """Send a formatted welcome message to the user with buttons"""
+    keyboard = InlineKeyboardMarkup()
+    if not is_user_in_channel(user_id):
+        # Send the "Join Channel" button if user is not in the channel
+        join_button = InlineKeyboardButton("Join Channel", url=f"https://t.me/{CHANNEL_USERNAME}")
+        keyboard.add(join_button)
+        bot.send_message(user_id, f"🎉 Welcome to our free help bot!\n\n"
+                                  "Please follow the steps to get your unique link:\n"
+                                  "1. **Join our channel**\n"
+                                  "2. **Get your PDF link**\n\n"
+                                  "Powered by Aveshtrix\n\n"
+                                  "Once you join the channel, press /start again.",
+                         reply_markup=keyboard)
+    else:
+        # Send the "Get PDF Link" button if user is in the channel
+        pdf_button = InlineKeyboardButton("Get PDF Link", callback_data="get_pdf_link")
+        keyboard.add(pdf_button)
+        bot.send_message(user_id, "✅ You have successfully joined the channel!\n\n"
+                                  "Now, you can get your unique PDF link below.\n\n"
+                                  "Powered by Aveshtrix", reply_markup=keyboard)
+
 @bot.message_handler(commands=['start'])
 def start(message):
     user_id = message.chat.id
-
-    # Create an inline keyboard with buttons
-    keyboard = InlineKeyboardMarkup()
-    join_button = InlineKeyboardButton("Join Channel", url=f"https://t.me/{CHANNEL_USERNAME}")
-    keyboard.add(join_button)
-
-    if not is_user_in_channel(user_id):
-        bot.send_message(user_id, f"🚀 Please join our channel first: {CHANNEL_USERNAME}\nThen press /start again.", reply_markup=keyboard)
-        return
-
-    # Check if the user already got a link
-    if user_id in user_links:
-        bot.send_message(user_id, "❌ You have already used your link. Wait for the next update.")
-        return
-
-    # Create the button for "Get PDF Link"
-    pdf_button = InlineKeyboardButton("Get PDF Link", callback_data="get_pdf_link")
-    keyboard.add(pdf_button)
-
-    if gplink_url:
-        unique_link = f"{gplink_url}?token={uuid.uuid4()}"
-        user_links[user_id] = (unique_link, time.time())  # Store the link and its creation time
-        bot.send_message(user_id, f"🎉 Here is your unique link:\n{unique_link}\n\n⏳ This link will expire in 2 minutes.", reply_markup=keyboard)
-    else:
-        bot.send_message(user_id, "❌ No link is available right now. Please wait for the admin to update.", reply_markup=keyboard)
+    send_welcome_message(user_id)
 
 @bot.message_handler(commands=['setlink'])
 def set_link(message):
@@ -90,11 +88,24 @@ def set_link(message):
 def send_pdf_link(call):
     user_id = call.from_user.id
 
+    # Check if user is in channel before sending the link
+    if not is_user_in_channel(user_id):
+        bot.send_message(user_id, f"🚀 You need to join the channel first: {CHANNEL_USERNAME}\nThen try again.")
+        return
+
+    # Send the unique link if the user has one
     if user_id in user_links:
         unique_link, timestamp = user_links[user_id]
         bot.send_message(user_id, f"🎉 Your unique link is ready:\n{unique_link}\n\n⏳ This link will expire in 2 minutes.")
     else:
         bot.send_message(user_id, "❌ You need to join the channel first. Please use the 'Join Channel' button and then try again.")
+
+def delete_user_link(user_id):
+    """Delete the user's link after 2 minutes"""
+    time.sleep(120)
+    if user_id in user_links:
+        del user_links[user_id]
+        bot.send_message(user_id, "⏳ Your link has expired! Request again later.")
 
 # Function to run bot polling and Flask app together
 def run_bot():
@@ -107,18 +118,3 @@ def run_flask():
 if __name__ == "__main__":
     threading.Thread(target=run_bot).start()
     run_flask()
-
-# ******************************
-# For the functionality to restrict the link request to one-time use:
-# You can enable this part tomorrow by uncommenting the following code:
-
-# def delete_user_link(user_id):
-#     """Delete the user's link after 2 minutes"""
-#     time.sleep(120)
-#     if user_id in user_links:
-#         del user_links[user_id]
-#         bot.send_message(user_id, "⏳ Your link has expired! Request again later.")
-# 
-# threading.Thread(target=delete_user_link, args=(user_id,)).start()
-
-# ******************************
