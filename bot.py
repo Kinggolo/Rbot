@@ -5,6 +5,7 @@ import time
 import uuid
 from flask import Flask
 from threading import Thread
+from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 # Environment variables
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -59,7 +60,15 @@ def start(message):
     if gplink_url:
         unique_link = f"{gplink_url}?token={uuid.uuid4()}"
         user_links[user_id] = (unique_link, time.time())  # Store the link and its creation time
-        bot.send_message(user_id, f"🎉 Here is your unique link:\n{unique_link}\n\n⏳ This link will expire in 2 minutes.")
+        
+        # Create inline buttons
+        keyboard = InlineKeyboardMarkup(row_width=1)
+        channel_button = InlineKeyboardButton("Join Channel", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")
+        gplink_button = InlineKeyboardButton("Get GPLink", url=unique_link)
+        
+        keyboard.add(channel_button, gplink_button)
+        
+        bot.send_message(user_id, "🎉 Here is your unique link. You can get it by clicking the button below:\n\n⏳ This link will expire in 2 minutes.", reply_markup=keyboard)
     else:
         bot.send_message(user_id, "❌ No link is available right now. Please wait for the admin to update.")
 
