@@ -48,7 +48,16 @@ threading.Thread(target=delete_expired_links, daemon=True).start()
 def send_welcome_message(user_id):
     """Send a formatted welcome message to the user with buttons"""
     keyboard = InlineKeyboardMarkup()
-    if not is_user_in_channel(user_id):
+    
+    # Check if user is in the channel
+    if is_user_in_channel(user_id):
+        # Send the "Get PDF Link" button if user is in the channel
+        pdf_button = InlineKeyboardButton("Get PDF Link", callback_data="get_pdf_link")
+        keyboard.add(pdf_button)
+        bot.send_message(user_id, "✅ You have successfully joined the channel!\n\n"
+                                  "Now, you can get your unique PDF link below.\n\n"
+                                  "Powered by Aveshtrix", reply_markup=keyboard)
+    else:
         # Send the "Join Channel" button if user is not in the channel
         join_button = InlineKeyboardButton("Join Channel", url=f"https://t.me/{CHANNEL_USERNAME}")
         keyboard.add(join_button)
@@ -59,13 +68,6 @@ def send_welcome_message(user_id):
                                   "Powered by Aveshtrix\n\n"
                                   "Once you join the channel, press /start again.",
                          reply_markup=keyboard)
-    else:
-        # Send the "Get PDF Link" button if user is in the channel
-        pdf_button = InlineKeyboardButton("Get PDF Link", callback_data="get_pdf_link")
-        keyboard.add(pdf_button)
-        bot.send_message(user_id, "✅ You have successfully joined the channel!\n\n"
-                                  "Now, you can get your unique PDF link below.\n\n"
-                                  "Powered by Aveshtrix", reply_markup=keyboard)
 
 @bot.message_handler(commands=['start'])
 def start(message):
