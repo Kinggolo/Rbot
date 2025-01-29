@@ -48,29 +48,30 @@ threading.Thread(target=delete_expired_links, daemon=True).start()
 def start(message):
     user_id = message.chat.id
 
+    # Check if the user is a member of the channel
+    keyboard = InlineKeyboardMarkup(row_width=1)
+    
     if not is_user_in_channel(user_id):
-        bot.send_message(user_id, f"🚀 Please join our channel first: {CHANNEL_USERNAME}\nThen press /start again.")
-        return
-
-    # Check if the user already got a link
-    if user_id in user_links:
-        bot.send_message(user_id, "❌ You have already used your link. Wait for the next update.")
-        return
-
-    if gplink_url:
-        unique_link = f"{gplink_url}?token={uuid.uuid4()}"
-        user_links[user_id] = (unique_link, time.time())  # Store the link and its creation time
-        
-        # Create inline buttons
-        keyboard = InlineKeyboardMarkup(row_width=1)
-        channel_button = InlineKeyboardButton("Join Channel", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")
-        gplink_button = InlineKeyboardButton("Get GPLink", url=unique_link)
-        
-        keyboard.add(channel_button, gplink_button)
-        
-        bot.send_message(user_id, "🎉 Here is your unique link. You can get it by clicking the button below:\n\n⏳ This link will expire in 2 minutes.", reply_markup=keyboard)
+        # If not a member, show button to join channel
+        join_button = InlineKeyboardButton("Join Channel", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")
+        keyboard.add(join_button)
+        bot.send_message(user_id, f"🚀 Please join our channel first: {CHANNEL_USERNAME}\nThen press /start again.", reply_markup=keyboard)
     else:
-        bot.send_message(user_id, "❌ No link is available right now. Please wait for the admin to update.")
+        # If already a member, show the GP link button
+        if user_id in user_links:
+            bot.send_message(user_id, "❌ You have already used your link. Wait for the next update.")
+        else:
+            if gplink_url:
+                unique_link = f"{gplink_url}?token={uuid.uuid4()}"
+                user_links[user_id] = (unique_link, time.time())  # Store the link and its creation time
+                
+                # Button to get the GP link
+                gplink_button = InlineKeyboardButton("Get GPLink", url=unique_link)
+                keyboard.add(gplink_button)
+                
+                bot.send_message(user_id, "🎉 You are a member of the channel! Click below to get your unique link.\n\n⏳ This link will expire in 2 minutes.", reply_markup=keyboard)
+            else:
+                bot.send_message(user_id, "❌ No link is available right now. Please wait for the admin to update.")
 
 @bot.message_handler(commands=['setlink'])
 def set_link(message):
