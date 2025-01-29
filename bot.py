@@ -1,6 +1,6 @@
 from flask import Flask, request
 from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import CommandHandler, Dispatcher, CallbackContext
+from telegram.ext import Application, CommandHandler, CallbackContext
 import logging
 import os
 
@@ -12,9 +12,9 @@ ADMIN_ID = os.getenv('ADMIN_ID')
 CHANNEL_ID = os.getenv('CHANNEL_ID')
 gplink = os.getenv('GPLINK')
 
-# Initialize the bot and dispatcher
+# Initialize the bot and application
 bot = Bot(token=BOT_TOKEN)
-dispatcher = Dispatcher(bot, None, workers=0)
+application = Application.builder().token(BOT_TOKEN).build()
 
 # Set up logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -31,36 +31,35 @@ def is_member(update: Update) -> bool:
         return False
 
 # Start command handler
-def start(update: Update, context: CallbackContext):
+async def start(update: Update, context: CallbackContext):
     if is_member(update):
         message = f"Congratulations! You're already a member of the channel. Here is your gplink: {gplink}"
-        update.message.reply_text(message)
+        await update.message.reply_text(message)
     else:
         keyboard = [[InlineKeyboardButton("Join Channel", url=f'https://t.me/{CHANNEL_ID[1:]}')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        update.message.reply_text("Hey Buddy, if you want the gplink, you need to join my channel.", reply_markup=reply_markup)
+        await update.message.reply_text("Hey Buddy, if you want the gplink, you need to join my channel.", reply_markup=reply_markup)
 
 # Admin command to update gplink
-def set_link(update: Update, context: CallbackContext):
-    # Only allow admin to change the link
+async def set_link(update: Update, context: CallbackContext):
     if update.message.from_user.id == ADMIN_ID:
         new_link = ' '.join(context.args)
         if new_link:
             global gplink
             gplink = new_link
-            update.message.reply_text(f"gplink has been updated to: {gplink}")
+            await update.message.reply_text(f"gplink has been updated to: {gplink}")
         else:
-            update.message.reply_text("Please provide a new gplink URL.")
+            await update.message.reply_text("Please provide a new gplink URL.")
     else:
-        update.message.reply_text("You are not authorized to change the gplink.")
+        await update.message.reply_text("You are not authorized to change the gplink.")
 
 # Flask route to handle webhook
 @app.route('/webhook', methods=['POST'])
-def webhook():
+async def webhook():
     if request.method == "POST":
         json_str = request.get_data(as_text=True)
         update = Update.de_json(json_str, bot)
-        dispatcher.process_update(update)
+        application.process_update(update)
         return "ok", 200
 
 # Set the webhook URL for your bot
@@ -74,8 +73,8 @@ if __name__ == '__main__':
     set_webhook()
 
     # Add command handlers
-    dispatcher.add_handler(CommandHandler('start', start))
-    dispatcher.add_handler(CommandHandler('setlink', set_link, pass_args=True))
+    application.add_handler(CommandHandler('start', start))
+    application.add_handler(CommandHandler('setlink', set_link, pass_args=True))
 
     # Run the Flask app
     app.run(host='0.0.0.0', port=5000)  # You can change the port as needed
