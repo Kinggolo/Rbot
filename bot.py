@@ -49,7 +49,7 @@ def send_welcome_message(user_id):
     """Send a formatted welcome message to the user with buttons"""
     keyboard = InlineKeyboardMarkup()
     
-    # Check if user is in the channel
+    # Initial check if user is in the channel
     if is_user_in_channel(user_id):
         # Send the "Get PDF Link" button if user is in the channel
         pdf_button = InlineKeyboardButton("Get PDF Link", callback_data="get_pdf_link")
@@ -72,7 +72,18 @@ def send_welcome_message(user_id):
 @bot.message_handler(commands=['start'])
 def start(message):
     user_id = message.chat.id
-    send_welcome_message(user_id)
+
+    # Check again if the user is in the channel
+    if is_user_in_channel(user_id):
+        send_welcome_message(user_id)
+    else:
+        bot.send_message(user_id, "🔄 Checking your subscription status... Please wait.")
+        # Recheck after a short delay to ensure the bot catches the updated subscription status
+        time.sleep(2)
+        if is_user_in_channel(user_id):
+            send_welcome_message(user_id)
+        else:
+            bot.send_message(user_id, "🚨 You are not in the channel. Please join and then press /start again.")
 
 @bot.message_handler(commands=['setlink'])
 def set_link(message):
