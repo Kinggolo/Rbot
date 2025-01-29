@@ -10,5 +10,8 @@ COPY . /app
 # Install the dependencies listed in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Set the command to run your bot
+# Expose port 5000 for the Flask app
+EXPOSE 5000
+
+# Set the command to run your bot with Flask app
 CMD ["python3", "bot.py"]
