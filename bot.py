@@ -28,7 +28,8 @@ def is_user_in_channel(user_id):
     try:
         chat_member = bot.get_chat_member(CHANNEL_USERNAME, user_id)
         return chat_member.status in ["member", "administrator", "creator"]
-    except Exception:
+    except Exception as e:
+        print(f"Error checking channel membership: {e}")
         return False
 
 def delete_expired_links():
@@ -51,10 +52,10 @@ def send_welcome_message(user_id):
         # Send the "Join Channel" button if user is not in the channel
         join_button = InlineKeyboardButton("Join Channel", url=f"https://t.me/{CHANNEL_USERNAME}")
         keyboard.add(join_button)
-        bot.send_message(user_id, f"🎉 Welcome to our free help bot!\n\n"
+        bot.send_message(user_id, "🎉 Welcome to our free help bot!\n\n"
                                   "Please follow the steps to get your unique link:\n"
-                                  "1. **Join our channel**\n"
-                                  "2. **Get your PDF link**\n\n"
+                                  "1. Join our channel\n"
+                                  "2. Get your PDF link\n\n"
                                   "Powered by Aveshtrix\n\n"
                                   "Once you join the channel, press /start again.",
                          reply_markup=keyboard)
