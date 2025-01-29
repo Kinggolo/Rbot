@@ -29,7 +29,7 @@ This is a simple Telegram bot that allows users to get a unique GP link after jo
 
 1. **Clone the repository**:
     ```bash
-    git clone (https://github.com/Kinggolo/Telegram-Channel-Force-Bot.git)
+    git clone https://github.com/Kinggolo/Telegram-Channel-Force-Bot.git
     cd Telegram-Channel-Force-Bot
     ```
 
