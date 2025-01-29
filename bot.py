@@ -3,9 +3,9 @@ import threading
 import time
 import uuid  # For generating unique tokens
 
-TOKEN = "YOUR_BOT_TOKEN"
-CHANNEL_USERNAME = "@yourchannel"
-ADMIN_ID = 123456789  # Replace with your Telegram ID
+TOKEN = "7974974522:AAGK3iWy8jrkLN9rvteBNaUyvsn43DwvzUQ"
+CHANNEL_USERNAME = "@speedy_current_affairs_2026"
+ADMIN_ID = 6120308082  # Replace with your Telegram ID
 
 bot = telebot.TeleBot(TOKEN)
 gplink_url = None  # Admin will set this manually
